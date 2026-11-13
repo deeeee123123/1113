@@ -33,7 +33,7 @@ try {
     const timeout = setTimeout(() => {
       if (login.disabled) {
         login.disabled = false;
-        message.textContent = "登入逾時或跳轉未完成。請用一般瀏覽器分頁開啟網站、允許彈出視窗，並確認 Firebase 授權網域後再試。";
+        message.textContent = "登入逾時或登入視窗未完成驗證。請允許彈出視窗後重試。";
       }
     }, 15000);
     try {
@@ -60,3 +60,4 @@ try {
   message.textContent = error.message;
   login.disabled = true;
 }
+
