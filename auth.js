@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 const gate = document.querySelector("#authGate");
 const planner = document.querySelector("#plannerApp");
@@ -27,11 +27,8 @@ try {
   const auth = getAuth(app);
   auth.useDeviceLanguage();
   logout.addEventListener("click", () => signOut(auth).catch(showError));
-  getRedirectResult(auth).then(result => {
-    if (result?.user) message.textContent = "登入成功，正在載入行程…";
-  }).catch(error => { showError(error); login.disabled = false; });
   login.addEventListener("click", async () => {
-    message.textContent = "正在前往 Google 登入，完成後會直接開啟行事曆…";
+    message.textContent = "正在開啟 Google 登入…";
     login.disabled = true;
     const timeout = setTimeout(() => {
       if (login.disabled) {
@@ -40,8 +37,8 @@ try {
       }
     }, 15000);
     try {
-      message.textContent = "正在前往 Google 登入，完成後會直接開啟行事曆…";
-      await signInWithRedirect(auth, new GoogleAuthProvider());
+      await signInWithPopup(auth, new GoogleAuthProvider());
+      clearTimeout(timeout);
     }
     catch (error) { clearTimeout(timeout); showError(error); login.disabled = false; }
   });
