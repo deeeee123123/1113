@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 const gate = document.querySelector("#authGate");
 const planner = document.querySelector("#plannerApp");
@@ -26,13 +26,12 @@ try {
   const app = initializeApp(window.FIREBASE_CONFIG);
   const auth = getAuth(app);
   auth.useDeviceLanguage();
-  const isEmbedded = window.top !== window.self;
   logout.addEventListener("click", () => signOut(auth).catch(showError));
   getRedirectResult(auth).then(result => {
     if (result?.user) message.textContent = "登入成功，正在載入行程…";
   }).catch(error => { showError(error); login.disabled = false; });
   login.addEventListener("click", async () => {
-    message.textContent = isEmbedded ? "正在前往 Google 登入…" : "正在開啟 Google 登入…";
+    message.textContent = "正在前往 Google 登入，完成後會直接開啟行事曆…";
     login.disabled = true;
     const timeout = setTimeout(() => {
       if (login.disabled) {
@@ -41,12 +40,8 @@ try {
       }
     }, 15000);
     try {
-      if (isEmbedded) {
-        message.textContent = "請於開啟的登入視窗完成 Google 登入，再返回此頁。";
-        await signInWithPopup(auth, new GoogleAuthProvider());
-      } else {
-        await signInWithPopup(auth, new GoogleAuthProvider());
-      }
+      message.textContent = "正在前往 Google 登入，完成後會直接開啟行事曆…";
+      await signInWithRedirect(auth, new GoogleAuthProvider());
     }
     catch (error) { clearTimeout(timeout); showError(error); login.disabled = false; }
   });
@@ -55,6 +50,7 @@ try {
     window.dispatchEvent(new Event("firebase-user-ready"));
     gate.hidden = !!user;
     planner.hidden = !user;
+    login.hidden = !!user;
     login.disabled = false;
     if (user) {
       userLabel.textContent = user.displayName || user.email || "個人空間";
