@@ -8,6 +8,23 @@ const login = document.querySelector("#googleLogin");
 const logout = document.querySelector("#logout");
 const userLabel = document.querySelector("#userLabel");
 
+function updateAuthState(user) {
+  const nextUser = user || null;
+  const previousUid = window.firebaseAuthUser?.uid || null;
+  const nextUid = nextUser?.uid || null;
+  window.firebaseAuthUser = nextUser;
+  if (previousUid !== nextUid) window.dispatchEvent(new Event("firebase-user-ready"));
+  const signedIn = !!nextUser;
+  gate.hidden = signedIn;
+  planner.hidden = !signedIn;
+  login.hidden = signedIn;
+  login.disabled = false;
+  if (nextUser) {
+    userLabel.textContent = nextUser.displayName || nextUser.email || "個人空間";
+    message.textContent = "";
+  }
+}
+
 function showError(error) {
   const messages = {
     "auth/unauthorized-domain": "此網域尚未加入 Firebase 授權網域，請在 Authentication → 設定中加入 deeeee123123.github.io。",
@@ -37,25 +54,13 @@ try {
       }
     }, 15000);
     try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
+      const result = await signInWithPopup(auth, new GoogleAuthProvider());
       clearTimeout(timeout);
+      updateAuthState(result.user);
     }
     catch (error) { clearTimeout(timeout); showError(error); login.disabled = false; }
   });
-  onAuthStateChanged(auth, user => {
-    window.firebaseAuthUser = user || null;
-    window.dispatchEvent(new Event("firebase-user-ready"));
-    gate.hidden = !!user;
-    planner.hidden = !user;
-    login.hidden = !!user;
-    login.disabled = false;
-    if (user) {
-      userLabel.textContent = user.displayName || user.email || "個人空間";
-      message.textContent = "";
-      login.disabled = false;
-
-    }
-  }, showError);
+  onAuthStateChanged(auth, updateAuthState, showError);
 } catch (error) {
   message.textContent = error.message;
   login.disabled = true;
